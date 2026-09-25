@@ -65,12 +65,7 @@ async function api(path,opts={}){
 }
 function rup(n){return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0)}
 async function load(){
- if(SUPABASE_PUBLISHABLE_KEY === "sb_publishable_cfdw50qBEsZkTJ0KphFKPQ_ga0nkGI0"){
-   $("conn").textContent="Konfigurasi Publishable Key belum diisi";
-   $("msg").textContent=" • buka config di index.html";
-   $("configHelp").style.display="block";
-   return;
- }
+ 
  try{data=await api("pedagang?select=*&order=id.asc");$("conn").textContent="Terhubung ke database online";$("msg").textContent=" • "+data.length+" data";render()}
  catch(e){$("conn").textContent="Gagal terhubung";$("msg").textContent=" • "+e.message;console.error(e)}
 }
