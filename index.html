@@ -10,7 +10,7 @@ header{background:#102a43;color:white}.card{background:#fff;border:1px solid #dd
 input,select,button{padding:10px;border:1px solid #ccc;border-radius:9px;font:inherit}button{cursor:pointer}.primary{background:#155eef;color:#fff;border-color:#155eef}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap}.tablewrap{overflow:auto;background:#fff;border-radius:14px}.table{border-collapse:collapse;width:100%;min-width:1150px}.table th,.table td{padding:9px;border-bottom:1px solid #eee;text-align:left;font-size:13px}.table th{background:#f9fafb}
 .status{padding:4px 8px;border-radius:99px;font-size:11px;font-weight:700}.ok{background:#ecfdf3;color:#027a48}.bad{background:#fef3f2;color:#b42318}.gray{background:#f2f4f7}
-#setup{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:10}.box{background:#fff;border-radius:16px;padding:22px;width:min(600px,92vw)}.box input{width:100%;margin:6px 0 12px;box-sizing:border-box}.note{background:#fff7ed;padding:10px;border-radius:10px;font-size:12px}
+.box{background:#fff;border-radius:16px;padding:22px;width:min(600px,92vw)}
 @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
@@ -22,7 +22,6 @@ input,select,button{padding:10px;border:1px solid #ccc;border-radius:9px;font:in
   <input id="q" placeholder="Cari nama / nomor register" oninput="render()">
   <select id="st" onchange="render()"><option value="">Semua status</option><option>Aktif</option><option>Tutup</option><option>Tidak Membayar</option><option>Tunggakan</option></select>
   <select id="ty" onchange="render()"><option value="">Semua dasaran</option><option>LOS</option><option>KIOS</option></select>
-  <button onclick="openSetup()">Pengaturan Koneksi</button>
   <button class="primary" onclick="openForm()">+ Tambah</button>
  </div>
 </div>
@@ -34,18 +33,11 @@ input,select,button{padding:10px;border:1px solid #ccc;border-radius:9px;font:in
 <div class="card"><div class="muted">Tunggakan</div><div class="v" id="tunggakan">0</div></div>
 </section>
 <div class="card"><b id="conn">Belum terhubung</b><span id="msg" class="muted"></span></div>
+</div>
 <div class="tablewrap"><table class="table"><thead><tr><th>No</th><th>Nama</th><th>Register</th><th>Retribusi</th><th>Jenis Jualan</th><th>Masa Izin</th><th>Dasaran</th><th>Status</th><th>Pembayaran</th><th>Aksi</th></tr></thead><tbody id="tbody"></tbody></table></div>
 <footer class="muted" style="padding:20px">Mengetahui Koordinator Wilayah 02 Karimata: Moc Winarno • NIP. 197803282009011007</footer>
 </main>
 
-<div id="setup"><div class="box">
-<h2>Hubungkan Supabase</h2>
-<p>Masukkan <b>Project URL</b> dan <b>Publishable Key</b> yang tadi Anda copy. Data disimpan di browser ini saja.</p>
-<label>Project URL</label><input id="url" placeholder="https://xxxxxxxx.supabase.co">
-<label>Publishable Key</label><input id="key" placeholder="sb_publishable_..." type="password">
-<div class="note">Jangan masukkan Secret Key atau password database.</div>
-<p><button class="primary" onclick="connect()">Simpan & Hubungkan</button></p>
-</div></div>
 
 <div id="form" style="display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center;z-index:9"><div class="box">
 <h2 id="ft">Tambah Data</h2>
@@ -58,22 +50,27 @@ input,select,button{padding:10px;border:1px solid #ccc;border-radius:9px;font:in
 </div></div>
 
 <script>
-let cfg=JSON.parse(localStorage.getItem("pk_cfg")||"null"), data=[], editId=null;
+const SUPABASE_URL = "https://xsvqxthqusuikocmnyki.supabase.co";
+// Isi hanya dengan Publishable Key Supabase Anda. Jangan gunakan Secret Key.
+const SUPABASE_PUBLISHABLE_KEY = "PASTE_PUBLISHABLE_KEY_HERE";
+let cfg = {
+  url: SUPABASE_URL,
+  key: SUPABASE_PUBLISHABLE_KEY
+};
+let data=[], editId=null;
 const $=id=>document.getElementById(id);
-function openSetup(){ $("setup").style.display="flex"; if(cfg){$("url").value=cfg.url;$("key").value=cfg.key} }
-async function connect(){
- let url=$("url").value.trim().replace(/\/$/,""), key=$("key").value.trim();
- if(!url||!key)return alert("Project URL dan Publishable Key wajib diisi.");
- if(url.endsWith("/rest/v1"))url=url.slice(0,-7);
- cfg={url,key};localStorage.setItem("pk_cfg",JSON.stringify(cfg)); $("setup").style.display="none"; await load();
-}
 async function api(path,opts={}){
  let r=await fetch(cfg.url+"/rest/v1/"+path,{...opts,headers:{apikey:cfg.key,Authorization:"Bearer "+cfg.key,"Content-Type":"application/json",Prefer:"return=representation",...(opts.headers||{})}});
  if(!r.ok)throw new Error(await r.text()); return r.status===204?[]:await r.json();
 }
 function rup(n){return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0)}
 async function load(){
- if(!cfg)return openSetup();
+ if(SUPABASE_PUBLISHABLE_KEY === "sb_publishable_cfdw50qBEsZkTJ0KphFKPQ_ga0nkGI0"){
+   $("conn").textContent="Konfigurasi Publishable Key belum diisi";
+   $("msg").textContent=" • buka config di index.html";
+   $("configHelp").style.display="block";
+   return;
+ }
  try{data=await api("pedagang?select=*&order=id.asc");$("conn").textContent="Terhubung ke database online";$("msg").textContent=" • "+data.length+" data";render()}
  catch(e){$("conn").textContent="Gagal terhubung";$("msg").textContent=" • "+e.message;console.error(e)}
 }
@@ -88,6 +85,6 @@ function openForm(id=null){editId=id;let x=id?data.find(a=>a.id===id):{};$("ft")
 function closeForm(){$("form").style.display="none"}
 async function save(){let x={nama:$("fNama").value.trim(),nomor_register:$("fReg").value.trim(),nominal_retribusi:Number($("fTarif").value)||0,jenis_jualan:$("fJenis").value.trim(),masa_berlaku_mulai:$("fMulai").value||null,masa_berlaku_akhir:$("fAkhir").value||null,type_dasaran:$("fType").value,status:$("fStatus").value,status_pembayaran:$("fBayar").value};if(!x.nama||!x.nomor_register)return alert("Nama dan nomor register wajib diisi.");try{if(editId)await api("pedagang?id=eq."+editId,{method:"PATCH",body:JSON.stringify(x)});else await api("pedagang",{method:"POST",body:JSON.stringify(x)});closeForm();await load()}catch(e){alert("Gagal menyimpan: "+e.message)}}
 function edit(id){openForm(id)}
-if(cfg){$("setup").style.display="none";load()}else openSetup();
+load();
 </script>
 </body></html>
