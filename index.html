@@ -1,85 +1,701 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Pasar Karimata Online</title>
+
 <style>
-body{font-family:system-ui,Arial;margin:0;background:#f4f7fb;color:#172033}.wrap{max-width:1400px;margin:auto;padding:18px}
-header{background:#102a43;color:white}.card{background:#fff;border:1px solid #ddd;border-radius:14px;padding:16px;margin:14px 0}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.v{font-size:25px;font-weight:800}.muted{color:#667085;font-size:12px}
-input,select,button{padding:10px;border:1px solid #ccc;border-radius:9px;font:inherit}button{cursor:pointer}.primary{background:#155eef;color:#fff;border-color:#155eef}
-.toolbar{display:flex;gap:8px;flex-wrap:wrap}.tablewrap{overflow:auto;background:#fff;border-radius:14px}.table{border-collapse:collapse;width:100%;min-width:1150px}.table th,.table td{padding:9px;border-bottom:1px solid #eee;text-align:left;font-size:13px}.table th{background:#f9fafb}
-.status{padding:4px 8px;border-radius:99px;font-size:11px;font-weight:700}.ok{background:#ecfdf3;color:#027a48}.bad{background:#fef3f2;color:#b42318}.gray{background:#f2f4f7}
-.box{background:#fff;border-radius:16px;padding:22px;width:min(600px,92vw)}
-@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+*{box-sizing:border-box}
+body{
+  font-family:system-ui,Arial,sans-serif;
+  margin:0;
+  background:#f4f7fb;
+  color:#172033
+}
+.wrap{max-width:1400px;margin:auto;padding:18px}
+header{background:#102a43;color:white}
+.card{
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:14px;
+  padding:16px;
+  margin:14px 0
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:12px
+}
+.v{font-size:25px;font-weight:800}
+.muted{color:#667085;font-size:12px}
+
+input,select,button{
+  padding:10px;
+  border:1px solid #ccc;
+  border-radius:9px;
+  font:inherit
+}
+button{cursor:pointer}
+.primary{
+  background:#155eef;
+  color:#fff;
+  border-color:#155eef
+}
+.danger{
+  background:#d92d20;
+  color:#fff;
+  border-color:#d92d20
+}
+.toolbar{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap
+}
+.tablewrap{
+  overflow:auto;
+  background:#fff;
+  border-radius:14px
+}
+.table{
+  border-collapse:collapse;
+  width:100%;
+  min-width:1150px
+}
+.table th,.table td{
+  padding:9px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+  font-size:13px
+}
+.table th{background:#f9fafb}
+
+.status{
+  padding:4px 8px;
+  border-radius:99px;
+  font-size:11px;
+  font-weight:700
+}
+.ok{background:#ecfdf3;color:#027a48}
+.bad{background:#fef3f2;color:#b42318}
+.gray{background:#f2f4f7}
+
+.box{
+  background:#fff;
+  border-radius:16px;
+  padding:22px;
+  width:min(600px,92vw)
+}
+
+.formgrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px
+}
+
+.formgrid input,
+.formgrid select{
+  width:100%
+}
+
+#form{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#0008;
+  align-items:center;
+  justify-content:center;
+  z-index:9
+}
+
+.notice{
+  background:#eff8ff;
+  border:1px solid #b2ddff;
+  color:#175cd3;
+  padding:10px;
+  border-radius:9px;
+  font-size:13px
+}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .formgrid{grid-template-columns:1fr}
+}
 </style>
 </head>
+
 <body>
-<header><div class="wrap"><h1>Kontrol Pasar Burung Karimata</h1><div>Data pedagang & retribusi • Kepala Pasar: Muhammad Adib Ulinnuha, S.M. • NIP. 199308252025211006</div></div></header>
+
+<header>
+<div class="wrap">
+<h1>Kontrol Pasar Burung Karimata</h1>
+<div>
+Data pedagang & retribusi • Kepala Pasar: Muhammad Adib Ulinnuha, S.M.
+</div>
+</div>
+</header>
+
 <main class="wrap">
+
 <div class="card">
- <div class="toolbar">
-  <input id="q" placeholder="Cari nama / nomor register" oninput="render()">
-  <select id="st" onchange="render()"><option value="">Semua status</option><option>Aktif</option><option>Tutup</option><option>Tidak Membayar</option><option>Tunggakan</option></select>
-  <select id="ty" onchange="render()"><option value="">Semua dasaran</option><option>LOS</option><option>KIOS</option></select>
-  <button class="primary" onclick="openForm()">+ Tambah</button>
- </div>
+  <div class="toolbar">
+    <input id="q"
+      placeholder="Cari nama / nomor register"
+      oninput="render()">
+
+    <select id="st" onchange="render()">
+      <option value="">Semua status</option>
+      <option>Aktif</option>
+      <option>Tutup</option>
+      <option>Tidak Membayar</option>
+      <option>Tunggakan</option>
+    </select>
+
+    <select id="ty" onchange="render()">
+      <option value="">Semua dasaran</option>
+      <option>LOS</option>
+      <option>KIOS</option>
+    </select>
+
+    <button class="primary" onclick="openForm()">
+      + Tambah
+    </button>
+  </div>
 </div>
+
 <section class="grid">
-<div class="card"><div class="muted">Total Data</div><div class="v" id="total">0</div></div>
-<div class="card"><div class="muted">Aktif</div><div class="v" id="aktif">0</div></div>
-<div class="card"><div class="muted">Tutup</div><div class="v" id="tutup">0</div></div>
-<div class="card"><div class="muted">Tidak Membayar</div><div class="v" id="tidak">0</div></div>
-<div class="card"><div class="muted">Tunggakan</div><div class="v" id="tunggakan">0</div></div>
-</section>
-<div class="card"><b id="conn">Belum terhubung</b><span id="msg" class="muted"></span></div>
+
+<div class="card">
+<div class="muted">Total Data</div>
+<div class="v" id="total">0</div>
 </div>
-<div class="tablewrap"><table class="table"><thead><tr><th>No</th><th>Nama</th><th>Register</th><th>Retribusi</th><th>Jenis Jualan</th><th>Masa Izin</th><th>Dasaran</th><th>Status</th><th>Pembayaran</th><th>Aksi</th></tr></thead><tbody id="tbody"></tbody></table></div>
-<footer class="muted" style="padding:20px">Mengetahui Koordinator Wilayah 02 Karimata: Moc Winarno • NIP. 197803282009011007</footer>
+
+<div class="card">
+<div class="muted">Aktif</div>
+<div class="v" id="aktif">0</div>
+</div>
+
+<div class="card">
+<div class="muted">Tutup</div>
+<div class="v" id="tutup">0</div>
+</div>
+
+<div class="card">
+<div class="muted">Tidak Membayar</div>
+<div class="v" id="tidak">0</div>
+</div>
+
+<div class="card">
+<div class="muted">Tunggakan</div>
+<div class="v" id="tunggakan">0</div>
+</div>
+
+</section>
+
+<div class="card">
+
+<b id="conn">Mode Lokal GitHub</b>
+
+<span id="msg" class="muted">
+ • Data tersimpan otomatis di browser ini
+</span>
+
+<p class="notice">
+Tidak membutuhkan Supabase atau server.
+Data tetap tersimpan setelah halaman ditutup.
+</p>
+
+</div>
+
+<div class="tablewrap">
+
+<table class="table">
+
+<thead>
+<tr>
+<th>No</th>
+<th>Nama</th>
+<th>Register</th>
+<th>Retribusi</th>
+<th>Jenis Jualan</th>
+<th>Masa Izin</th>
+<th>Dasaran</th>
+<th>Status</th>
+<th>Pembayaran</th>
+<th>Aksi</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+
+</table>
+
+</div>
+
+<footer class="muted" style="padding:20px">
+Mengetahui Koordinator Wilayah 02 Karimata
+</footer>
+
 </main>
 
 
-<div id="form" style="display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center;z-index:9"><div class="box">
+<!-- FORM -->
+
+<div id="form">
+
+<div class="box">
+
 <h2 id="ft">Tambah Data</h2>
-<input id="fNama" placeholder="Nama pedagang"><input id="fReg" placeholder="Nomor register"><input id="fTarif" type="number" placeholder="Nominal retribusi"><input id="fJenis" placeholder="Jenis jualan">
-<input id="fMulai" type="date"><input id="fAkhir" type="date">
-<select id="fType"><option>LOS</option><option>KIOS</option></select>
-<select id="fStatus"><option>Aktif</option><option>Tutup</option><option>Tidak Membayar</option><option>Tunggakan</option></select>
-<select id="fBayar"><option>Belum diverifikasi</option><option>Lunas</option><option>Tidak Membayar</option><option>Tunggakan</option></select>
-<p><button onclick="closeForm()">Batal</button> <button class="primary" onclick="save()">Simpan</button></p>
-</div></div>
+
+<div class="formgrid">
+
+<input id="fNama" placeholder="Nama pedagang">
+
+<input id="fReg" placeholder="Nomor register">
+
+<input id="fTarif"
+       type="number"
+       placeholder="Nominal retribusi">
+
+<input id="fJenis"
+       placeholder="Jenis jualan">
+
+<input id="fMulai" type="date">
+
+<input id="fAkhir" type="date">
+
+<select id="fType">
+<option>LOS</option>
+<option>KIOS</option>
+</select>
+
+<select id="fStatus">
+<option>Aktif</option>
+<option>Tutup</option>
+<option>Tidak Membayar</option>
+<option>Tunggakan</option>
+</select>
+
+<select id="fBayar">
+<option>Belum diverifikasi</option>
+<option>Lunas</option>
+<option>Tidak Membayar</option>
+<option>Tunggakan</option>
+</select>
+
+</div>
+
+<p>
+
+<button onclick="closeForm()">
+Batal
+</button>
+
+<button class="primary" onclick="save()">
+Simpan
+</button>
+
+</p>
+
+</div>
+</div>
+
 
 <script>
-const SUPABASE_URL = "https://xsvxqthqusuikocmyki.supabase.co";
-// Isi hanya dengan Publishable Key Supabase Anda. Jangan gunakan Secret Key.
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_cfdw50qBEsZkTJ0KphFKPQ_ga0nkGI0";
-let cfg = {
-  url: SUPABASE_URL,
-  key: SUPABASE_PUBLISHABLE_KEY
-};
-let data=[], editId=null;
-const $=id=>document.getElementById(id);
-async function api(path,opts={}){
- let r=await fetch(cfg.url+"/rest/v1/"+path,{...opts,headers:{apikey:cfg.key,Authorization:"Bearer "+cfg.key,"Content-Type":"application/json",Prefer:"return=representation",...(opts.headers||{})}});
- if(!r.ok)throw new Error(await r.text()); return r.status===204?[]:await r.json();
+
+/* =========================
+   DATABASE LOKAL
+========================= */
+
+const STORAGE_KEY = "pasar_karimata_data_v1";
+
+let data = [];
+let editId = null;
+
+const $ = id => document.getElementById(id);
+
+
+/* =========================
+   LOAD DATA
+========================= */
+
+function load(){
+
+  try{
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+
+    data = saved ? JSON.parse(saved) : [];
+
+  }catch(e){
+
+    data = [];
+
+  }
+
+  render();
 }
-function rup(n){return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0)}
-async function load(){
- 
- try{data=await api("pedagang?select=*&order=id.asc");$("conn").textContent="Terhubung ke database online";$("msg").textContent=" • "+data.length+" data";render()}
- catch(e){$("conn").textContent="Gagal terhubung";$("msg").textContent=" • "+e.message;console.error(e)}
+
+
+/* =========================
+   SAVE DATABASE
+========================= */
+
+function saveDatabase(){
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(data)
+  );
+
 }
+
+
+/* =========================
+   FORMAT RUPIAH
+========================= */
+
+function rup(n){
+
+  return new Intl.NumberFormat(
+    "id-ID",
+    {
+      style:"currency",
+      currency:"IDR",
+      maximumFractionDigits:0
+    }
+  ).format(Number(n)||0);
+
+}
+
+
+/* =========================
+   RENDER
+========================= */
+
 function render(){
- let q=$("q").value.toLowerCase(),st=$("st").value,ty=$("ty").value;
- let f=data.filter(x=>(!q||(x.nama||"").toLowerCase().includes(q)||(x.nomor_register||"").toLowerCase().includes(q))&&(!st||x.status===st)&&(!ty||x.type_dasaran===ty));
- $("total").textContent=data.length;$("aktif").textContent=data.filter(x=>x.status==="Aktif").length;$("tutup").textContent=data.filter(x=>x.status==="Tutup").length;$("tidak").textContent=data.filter(x=>x.status==="Tidak Membayar").length;$("tunggakan").textContent=data.filter(x=>x.status==="Tunggakan").length;
- $("tbody").innerHTML=f.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.nama)}</td><td>${esc(x.nomor_register)}</td><td>${rup(x.nominal_retribusi)}</td><td>${esc(x.jenis_jualan||"")}</td><td>${esc(x.masa_berlaku_mulai||"")} s/d ${esc(x.masa_berlaku_akhir||"")}</td><td>${esc(x.type_dasaran||"")}</td><td><span class="status ${x.status==="Aktif"?"ok":x.status==="Tunggakan"||x.status==="Tidak Membayar"?"bad":"gray"}">${esc(x.status)}</span></td><td>${esc(x.status_pembayaran||"")}</td><td><button onclick='edit(${x.id})'>Edit</button></td></tr>`).join("");
+
+  let q = $("q").value.toLowerCase();
+  let st = $("st").value;
+  let ty = $("ty").value;
+
+  let f = data.filter(x =>
+
+    (
+      !q ||
+      (x.nama||"").toLowerCase().includes(q) ||
+      (x.nomor_register||"").toLowerCase().includes(q)
+    )
+
+    &&
+
+    (!st || x.status === st)
+
+    &&
+
+    (!ty || x.type_dasaran === ty)
+
+  );
+
+
+  $("total").textContent =
+    data.length;
+
+  $("aktif").textContent =
+    data.filter(x=>x.status==="Aktif").length;
+
+  $("tutup").textContent =
+    data.filter(x=>x.status==="Tutup").length;
+
+  $("tidak").textContent =
+    data.filter(x=>x.status==="Tidak Membayar").length;
+
+  $("tunggakan").textContent =
+    data.filter(x=>x.status==="Tunggakan").length;
+
+
+  $("tbody").innerHTML = f.map((x,i)=>`
+
+<tr>
+
+<td>${i+1}</td>
+
+<td>${esc(x.nama)}</td>
+
+<td>${esc(x.nomor_register)}</td>
+
+<td>${rup(x.nominal_retribusi)}</td>
+
+<td>${esc(x.jenis_jualan||"")}</td>
+
+<td>
+${esc(x.masa_berlaku_mulai||"")}
+s/d
+${esc(x.masa_berlaku_akhir||"")}
+</td>
+
+<td>${esc(x.type_dasaran||"")}</td>
+
+<td>
+
+<span class="status ${
+x.status==="Aktif"
+?"ok"
+:
+x.status==="Tunggakan" ||
+x.status==="Tidak Membayar"
+?"bad"
+:"gray"
+}">
+
+${esc(x.status)}
+
+</span>
+
+</td>
+
+<td>
+${esc(x.status_pembayaran||"")}
+</td>
+
+<td>
+
+<button onclick="edit(${x.id})">
+Edit
+</button>
+
+<button
+class="danger"
+onclick="hapus(${x.id})">
+Hapus
+</button>
+
+</td>
+
+</tr>
+
+`).join("");
+
 }
-function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-function openForm(id=null){editId=id;let x=id?data.find(a=>a.id===id):{};$("ft").textContent=id?"Edit Data":"Tambah Data";$("fNama").value=x.nama||"";$("fReg").value=x.nomor_register||"";$("fTarif").value=x.nominal_retribusi||0;$("fJenis").value=x.jenis_jualan||"";$("fMulai").value=x.masa_berlaku_mulai||"";$("fAkhir").value=x.masa_berlaku_akhir||"";$("fType").value=x.type_dasaran||"LOS";$("fStatus").value=x.status||"Aktif";$("fBayar").value=x.status_pembayaran||"Belum diverifikasi";$("form").style.display="flex"}
-function closeForm(){$("form").style.display="none"}
-async function save(){let x={nama:$("fNama").value.trim(),nomor_register:$("fReg").value.trim(),nominal_retribusi:Number($("fTarif").value)||0,jenis_jualan:$("fJenis").value.trim(),masa_berlaku_mulai:$("fMulai").value||null,masa_berlaku_akhir:$("fAkhir").value||null,type_dasaran:$("fType").value,status:$("fStatus").value,status_pembayaran:$("fBayar").value};if(!x.nama||!x.nomor_register)return alert("Nama dan nomor register wajib diisi.");try{if(editId)await api("pedagang?id=eq."+editId,{method:"PATCH",body:JSON.stringify(x)});else await api("pedagang",{method:"POST",body:JSON.stringify(x)});closeForm();await load()}catch(e){alert("Gagal menyimpan: "+e.message)}}
-function edit(id){openForm(id)}
+
+
+/* =========================
+   ESCAPE HTML
+========================= */
+
+function esc(s){
+
+  return String(s??"")
+  .replace(/[&<>"']/g,m=>({
+
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#039;"
+
+  }[m]));
+
+}
+
+
+/* =========================
+   OPEN FORM
+========================= */
+
+function openForm(id=null){
+
+  editId = id;
+
+  let x =
+    id
+    ? data.find(a=>a.id===id)
+    : {};
+
+  $("ft").textContent =
+    id ? "Edit Data" : "Tambah Data";
+
+  $("fNama").value =
+    x.nama || "";
+
+  $("fReg").value =
+    x.nomor_register || "";
+
+  $("fTarif").value =
+    x.nominal_retribusi || 0;
+
+  $("fJenis").value =
+    x.jenis_jualan || "";
+
+  $("fMulai").value =
+    x.masa_berlaku_mulai || "";
+
+  $("fAkhir").value =
+    x.masa_berlaku_akhir || "";
+
+  $("fType").value =
+    x.type_dasaran || "LOS";
+
+  $("fStatus").value =
+    x.status || "Aktif";
+
+  $("fBayar").value =
+    x.status_pembayaran ||
+    "Belum diverifikasi";
+
+  $("form").style.display="flex";
+
+}
+
+
+/* =========================
+   CLOSE FORM
+========================= */
+
+function closeForm(){
+
+  $("form").style.display="none";
+
+}
+
+
+/* =========================
+   SAVE DATA
+========================= */
+
+function save(){
+
+  let x = {
+
+    nama:
+      $("fNama").value.trim(),
+
+    nomor_register:
+      $("fReg").value.trim(),
+
+    nominal_retribusi:
+      Number($("fTarif").value)||0,
+
+    jenis_jualan:
+      $("fJenis").value.trim(),
+
+    masa_berlaku_mulai:
+      $("fMulai").value || null,
+
+    masa_berlaku_akhir:
+      $("fAkhir").value || null,
+
+    type_dasaran:
+      $("fType").value,
+
+    status:
+      $("fStatus").value,
+
+    status_pembayaran:
+      $("fBayar").value
+
+  };
+
+
+  if(!x.nama){
+
+    alert("Nama pedagang wajib diisi.");
+
+    return;
+
+  }
+
+
+  if(!x.nomor_register){
+
+    alert("Nomor register wajib diisi.");
+
+    return;
+
+  }
+
+
+  if(editId){
+
+    const index =
+      data.findIndex(x=>x.id===editId);
+
+    if(index !== -1){
+
+      data[index] = {
+
+        ...data[index],
+        ...x
+
+      };
+
+    }
+
+  }else{
+
+    data.push({
+
+      id:Date.now(),
+
+      ...x
+
+    });
+
+  }
+
+
+  saveDatabase();
+
+  closeForm();
+
+  render();
+
+}
+
+
+/* =========================
+   EDIT
+========================= */
+
+function edit(id){
+
+  openForm(id);
+
+}
+
+
+/* =========================
+   HAPUS
+========================= */
+
+function hapus(id){
+
+  const x =
+    data.find(a=>a.id===id);
+
+  if(!x) return;
+
+  if(!confirm(
+    "Hapus data "+x.nama+"?"
+  )) return;
+
+  data =
+    data.filter(x=>x.id!==id);
+
+  saveDatabase();
+
+  render();
+
+}
+
+
+/* =========================
+   START
+========================= */
+
 load();
+
 </script>
-</body></html>
+
+</body>
+</html>
