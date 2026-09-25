@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Pasar Karimata Online</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
 body{
@@ -117,9 +119,43 @@ button{cursor:pointer}
   font-size:13px
 }
 
+.error{
+  background:#fef3f2;
+  border:1px solid #fecdca;
+  color:#b42318;
+  padding:10px;
+  border-radius:9px;
+  font-size:13px;
+  display:none;
+  margin-top:10px
+}
+
+.success{
+  background:#ecfdf3;
+  border:1px solid #abefc6;
+  color:#027a48;
+  padding:10px;
+  border-radius:9px;
+  font-size:13px;
+  display:none;
+  margin-top:10px
+}
+
+.loading{
+  padding:30px;
+  text-align:center;
+  color:#667085
+}
+
 @media(max-width:900px){
   .grid{grid-template-columns:repeat(2,1fr)}
   .formgrid{grid-template-columns:1fr}
+}
+
+@media(max-width:600px){
+  .wrap{padding:10px}
+  .grid{grid-template-columns:1fr 1fr}
+  h1{font-size:22px}
 }
 </style>
 </head>
@@ -138,29 +174,40 @@ Data pedagang & retribusi • Kepala Pasar: Muhammad Adib Ulinnuha, S.M.
 <main class="wrap">
 
 <div class="card">
-  <div class="toolbar">
-    <input id="q"
-      placeholder="Cari nama / nomor register"
-      oninput="render()">
 
-    <select id="st" onchange="render()">
-      <option value="">Semua status</option>
-      <option>Aktif</option>
-      <option>Tutup</option>
-      <option>Tidak Membayar</option>
-      <option>Tunggakan</option>
-    </select>
+<div class="toolbar">
 
-    <select id="ty" onchange="render()">
-      <option value="">Semua dasaran</option>
-      <option>LOS</option>
-      <option>KIOS</option>
-    </select>
+<input id="q"
+placeholder="Cari nama / nomor register"
+oninput="render()">
 
-    <button class="primary" onclick="openForm()">
-      + Tambah
-    </button>
-  </div>
+<select id="st" onchange="render()">
+<option value="">Semua status</option>
+<option>Aktif</option>
+<option>Tutup</option>
+<option>Tidak Membayar</option>
+<option>Tunggakan</option>
+</select>
+
+<select id="ty" onchange="render()">
+<option value="">Semua dasaran</option>
+<option>LOS</option>
+<option>KIOS</option>
+</select>
+
+<button class="primary" onclick="openForm()">
++ Tambah
+</button>
+
+<button onclick="loadData()">
+↻ Refresh
+</button>
+
+</div>
+
+<div id="error" class="error"></div>
+<div id="success" class="success"></div>
+
 </div>
 
 <section class="grid">
@@ -194,15 +241,14 @@ Data pedagang & retribusi • Kepala Pasar: Muhammad Adib Ulinnuha, S.M.
 
 <div class="card">
 
-<b id="conn">Mode Lokal GitHub</b>
+<b id="conn">Menghubungkan ke Supabase...</b>
 
 <span id="msg" class="muted">
- • Data tersimpan otomatis di browser ini
+ • Memuat database Pasar Karimata
 </span>
 
 <p class="notice">
-Tidak membutuhkan Supabase atau server.
-Data tetap tersimpan setelah halaman ditutup.
+Database online aktif. Data dibaca langsung dari Supabase.
 </p>
 
 </div>
@@ -226,7 +272,13 @@ Data tetap tersimpan setelah halaman ditutup.
 </tr>
 </thead>
 
-<tbody id="tbody"></tbody>
+<tbody id="tbody">
+<tr>
+<td colspan="10">
+<div class="loading">Memuat data...</div>
+</td>
+</tr>
+</tbody>
 
 </table>
 
@@ -254,11 +306,11 @@ Mengetahui Koordinator Wilayah 02 Karimata
 <input id="fReg" placeholder="Nomor register">
 
 <input id="fTarif"
-       type="number"
-       placeholder="Nominal retribusi">
+type="number"
+placeholder="Nominal retribusi">
 
 <input id="fJenis"
-       placeholder="Jenis jualan">
+placeholder="Jenis jualan">
 
 <input id="fMulai" type="date">
 
@@ -303,57 +355,146 @@ Simpan
 
 <script>
 
-/* =========================
-   DATABASE LOKAL
-========================= */
+/* =====================================================
+   SUPABASE
+===================================================== */
 
-const STORAGE_KEY = "pasar_karimata_data_v1";
+const SUPABASE_URL =
+"https://xsvqxthqusuikocmnyki.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+"sb_publishable_cfdw50qBEsZkTJ0KphFKPQ_ga0nkGI0";
+
+const { createClient } =
+supabase;
+
+const db =
+createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+
+/* =====================================================
+   DATA
+===================================================== */
 
 let data = [];
 let editId = null;
 
-const $ = id => document.getElementById(id);
+const $ = id =>
+document.getElementById(id);
 
 
-/* =========================
-   LOAD DATA
-========================= */
+/* =====================================================
+   PESAN
+===================================================== */
 
-function load(){
+function showError(message){
+
+  $("error").textContent =
+    message;
+
+  $("error").style.display =
+    "block";
+
+  $("success").style.display =
+    "none";
+}
+
+
+function showSuccess(message){
+
+  $("success").textContent =
+    message;
+
+  $("success").style.display =
+    "block";
+
+  $("error").style.display =
+    "none";
+
+  setTimeout(()=>{
+    $("success").style.display="none";
+  },3000);
+
+}
+
+
+/* =====================================================
+   LOAD DATA SUPABASE
+===================================================== */
+
+async function loadData(){
+
+  $("conn").textContent =
+    "Menghubungkan ke Supabase...";
+
+  $("tbody").innerHTML = `
+    <tr>
+      <td colspan="10">
+        <div class="loading">
+          Memuat data...
+        </div>
+      </td>
+    </tr>
+  `;
 
   try{
 
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const result =
+      await db
+      .from("pedagang")
+      .select("*")
+      .order("nama",{ascending:true})
+      .limit(1000);
 
-    data = saved ? JSON.parse(saved) : [];
+    if(result.error){
 
-  }catch(e){
+      throw result.error;
 
-    data = [];
+    }
+
+    data =
+      result.data || [];
+
+    $("conn").textContent =
+      "✓ Terhubung ke Supabase";
+
+    $("msg").textContent =
+      " • Database online • "+
+      data.length+
+      " data";
+
+    render();
+
+  }catch(error){
+
+    console.error(error);
+
+    data=[];
+
+    $("conn").textContent =
+      "✕ Gagal terhubung";
+
+    $("msg").textContent =
+      " • Periksa RLS / policy tabel pedagang";
+
+    showError(
+      "Gagal mengambil data Supabase: "+
+      error.message
+    );
+
+    render();
 
   }
 
-  render();
 }
 
 
-/* =========================
-   SAVE DATABASE
-========================= */
-
-function saveDatabase(){
-
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(data)
-  );
-
-}
-
-
-/* =========================
+/* =====================================================
    FORMAT RUPIAH
-========================= */
+===================================================== */
 
 function rup(n){
 
@@ -369,123 +510,13 @@ function rup(n){
 }
 
 
-/* =========================
-   RENDER
-========================= */
-
-function render(){
-
-  let q = $("q").value.toLowerCase();
-  let st = $("st").value;
-  let ty = $("ty").value;
-
-  let f = data.filter(x =>
-
-    (
-      !q ||
-      (x.nama||"").toLowerCase().includes(q) ||
-      (x.nomor_register||"").toLowerCase().includes(q)
-    )
-
-    &&
-
-    (!st || x.status === st)
-
-    &&
-
-    (!ty || x.type_dasaran === ty)
-
-  );
-
-
-  $("total").textContent =
-    data.length;
-
-  $("aktif").textContent =
-    data.filter(x=>x.status==="Aktif").length;
-
-  $("tutup").textContent =
-    data.filter(x=>x.status==="Tutup").length;
-
-  $("tidak").textContent =
-    data.filter(x=>x.status==="Tidak Membayar").length;
-
-  $("tunggakan").textContent =
-    data.filter(x=>x.status==="Tunggakan").length;
-
-
-  $("tbody").innerHTML = f.map((x,i)=>`
-
-<tr>
-
-<td>${i+1}</td>
-
-<td>${esc(x.nama)}</td>
-
-<td>${esc(x.nomor_register)}</td>
-
-<td>${rup(x.nominal_retribusi)}</td>
-
-<td>${esc(x.jenis_jualan||"")}</td>
-
-<td>
-${esc(x.masa_berlaku_mulai||"")}
-s/d
-${esc(x.masa_berlaku_akhir||"")}
-</td>
-
-<td>${esc(x.type_dasaran||"")}</td>
-
-<td>
-
-<span class="status ${
-x.status==="Aktif"
-?"ok"
-:
-x.status==="Tunggakan" ||
-x.status==="Tidak Membayar"
-?"bad"
-:"gray"
-}">
-
-${esc(x.status)}
-
-</span>
-
-</td>
-
-<td>
-${esc(x.status_pembayaran||"")}
-</td>
-
-<td>
-
-<button onclick="edit(${x.id})">
-Edit
-</button>
-
-<button
-class="danger"
-onclick="hapus(${x.id})">
-Hapus
-</button>
-
-</td>
-
-</tr>
-
-`).join("");
-
-}
-
-
-/* =========================
+/* =====================================================
    ESCAPE HTML
-========================= */
+===================================================== */
 
 function esc(s){
 
-  return String(s??"")
+  return String(s ?? "")
   .replace(/[&<>"']/g,m=>({
 
     "&":"&amp;",
@@ -499,73 +530,238 @@ function esc(s){
 }
 
 
-/* =========================
-   OPEN FORM
-========================= */
+/* =====================================================
+   RENDER
+===================================================== */
+
+function render(){
+
+  const q =
+    $("q").value
+    .toLowerCase()
+    .trim();
+
+  const st =
+    $("st").value;
+
+  const ty =
+    $("ty").value;
+
+
+  const f =
+    data.filter(x => {
+
+      const nama =
+        String(x.nama || "")
+        .toLowerCase();
+
+      const reg =
+        String(x.nomor_register || "")
+        .toLowerCase();
+
+      return (
+
+        (!q ||
+          nama.includes(q) ||
+          reg.includes(q))
+
+        &&
+
+        (!st ||
+          x.status === st)
+
+        &&
+
+        (!ty ||
+          x.type_dasaran === ty)
+
+      );
+
+    });
+
+
+  $("total").textContent =
+    data.length;
+
+  $("aktif").textContent =
+    data.filter(
+      x=>x.status==="Aktif"
+    ).length;
+
+  $("tutup").textContent =
+    data.filter(
+      x=>x.status==="Tutup"
+    ).length;
+
+  $("tidak").textContent =
+    data.filter(
+      x=>x.status==="Tidak Membayar"
+    ).length;
+
+  $("tunggakan").textContent =
+    data.filter(
+      x=>x.status==="Tunggakan"
+    ).length;
+
+
+  if(!f.length){
+
+    $("tbody").innerHTML = `
+      <tr>
+        <td colspan="10">
+          <div class="loading">
+            Tidak ada data yang cocok.
+          </div>
+        </td>
+      </tr>
+    `;
+
+    return;
+
+  }
+
+
+  $("tbody").innerHTML =
+    f.map((x,i)=>`
+
+<tr>
+
+<td>${i+1}</td>
+
+<td>${esc(x.nama)}</td>
+
+<td>${esc(x.nomor_register)}</td>
+
+<td>${rup(x.nominal_retribusi)}</td>
+
+<td>${esc(x.jenis_jualan || "")}</td>
+
+<td>
+${esc(x.masa_berlaku_mulai || "")}
+s/d
+${esc(x.masa_berlaku_akhir || "")}
+</td>
+
+<td>${esc(x.type_dasaran || "")}</td>
+
+<td>
+
+<span class="status ${
+  x.status==="Aktif"
+  ? "ok"
+  :
+  x.status==="Tunggakan" ||
+  x.status==="Tidak Membayar"
+  ? "bad"
+  : "gray"
+}">
+
+${esc(x.status || "")}
+
+</span>
+
+</td>
+
+<td>
+${esc(x.status_pembayaran || "")}
+</td>
+
+<td>
+
+<button onclick="edit('${esc(String(x.id))}')">
+Edit
+</button>
+
+<button
+class="danger"
+onclick="hapus('${esc(String(x.id))}')">
+Hapus
+</button>
+
+</td>
+
+</tr>
+
+`).join("");
+
+}
+
+
+/* =====================================================
+   FORM
+===================================================== */
 
 function openForm(id=null){
 
   editId = id;
 
-  let x =
+  const x =
     id
-    ? data.find(a=>a.id===id)
+    ? data.find(
+        a=>String(a.id)===String(id)
+      )
     : {};
 
   $("ft").textContent =
-    id ? "Edit Data" : "Tambah Data";
+    id
+    ? "Edit Data"
+    : "Tambah Data";
 
   $("fNama").value =
-    x.nama || "";
+    x?.nama || "";
 
   $("fReg").value =
-    x.nomor_register || "";
+    x?.nomor_register || "";
 
   $("fTarif").value =
-    x.nominal_retribusi || 0;
+    x?.nominal_retribusi || 0;
 
   $("fJenis").value =
-    x.jenis_jualan || "";
+    x?.jenis_jualan || "";
 
   $("fMulai").value =
-    x.masa_berlaku_mulai || "";
+    x?.masa_berlaku_mulai || "";
 
   $("fAkhir").value =
-    x.masa_berlaku_akhir || "";
+    x?.masa_berlaku_akhir || "";
 
   $("fType").value =
-    x.type_dasaran || "LOS";
+    x?.type_dasaran || "LOS";
 
   $("fStatus").value =
-    x.status || "Aktif";
+    x?.status || "Aktif";
 
   $("fBayar").value =
-    x.status_pembayaran ||
+    x?.status_pembayaran ||
     "Belum diverifikasi";
 
-  $("form").style.display="flex";
+  $("form").style.display =
+    "flex";
 
 }
 
 
-/* =========================
-   CLOSE FORM
-========================= */
+/* =====================================================
+   CLOSE
+===================================================== */
 
 function closeForm(){
 
-  $("form").style.display="none";
+  $("form").style.display =
+    "none";
+
+  editId=null;
 
 }
 
 
-/* =========================
-   SAVE DATA
-========================= */
+/* =====================================================
+   SAVE
+===================================================== */
 
-function save(){
+async function save(){
 
-  let x = {
+  const x = {
 
     nama:
       $("fNama").value.trim(),
@@ -599,7 +795,9 @@ function save(){
 
   if(!x.nama){
 
-    alert("Nama pedagang wajib diisi.");
+    alert(
+      "Nama pedagang wajib diisi."
+    );
 
     return;
 
@@ -608,54 +806,80 @@ function save(){
 
   if(!x.nomor_register){
 
-    alert("Nomor register wajib diisi.");
+    alert(
+      "Nomor register wajib diisi."
+    );
 
     return;
 
   }
 
 
-  if(editId){
+  try{
 
-    const index =
-      data.findIndex(x=>x.id===editId);
+    let result;
 
-    if(index !== -1){
 
-      data[index] = {
+    /* EDIT */
 
-        ...data[index],
-        ...x
+    if(editId){
 
-      };
+      result =
+        await db
+        .from("pedagang")
+        .update(x)
+        .eq("id",editId);
+
 
     }
 
-  }else{
+    /* TAMBAH */
 
-    data.push({
+    else{
 
-      id:Date.now(),
+      result =
+        await db
+        .from("pedagang")
+        .insert([x]);
 
-      ...x
+    }
 
-    });
+
+    if(result.error){
+
+      throw result.error;
+
+    }
+
+
+    closeForm();
+
+    await loadData();
+
+    showSuccess(
+      editId
+      ? "Data berhasil diperbarui."
+      : "Data berhasil ditambahkan."
+    );
+
+
+  }catch(error){
+
+    console.error(error);
+
+    showError(
+      "Gagal menyimpan data: "+
+      error.message
+    );
 
   }
-
-
-  saveDatabase();
-
-  closeForm();
-
-  render();
 
 }
 
 
-/* =========================
+/* =====================================================
    EDIT
-========================= */
+===================================================== */
 
 function edit(id){
 
@@ -664,36 +888,67 @@ function edit(id){
 }
 
 
-/* =========================
+/* =====================================================
    HAPUS
-========================= */
+===================================================== */
 
-function hapus(id){
+async function hapus(id){
 
   const x =
-    data.find(a=>a.id===id);
+    data.find(
+      a=>String(a.id)===String(id)
+    );
 
   if(!x) return;
+
 
   if(!confirm(
     "Hapus data "+x.nama+"?"
   )) return;
 
-  data =
-    data.filter(x=>x.id!==id);
 
-  saveDatabase();
+  try{
 
-  render();
+    const result =
+      await db
+      .from("pedagang")
+      .delete()
+      .eq("id",id);
+
+
+    if(result.error){
+
+      throw result.error;
+
+    }
+
+
+    await loadData();
+
+    showSuccess(
+      "Data berhasil dihapus."
+    );
+
+
+  }catch(error){
+
+    console.error(error);
+
+    showError(
+      "Gagal menghapus data: "+
+      error.message
+    );
+
+  }
 
 }
 
 
-/* =========================
-   START
-========================= */
+/* =====================================================
+   MULAI
+===================================================== */
 
-load();
+loadData();
 
 </script>
 
